@@ -36,41 +36,6 @@ public:
 
 };
 
-inline void utility::printStrAs6(const string &s) {
-    int len = s.length(); cout << s[0];
-    for (int i=1; i^len; ++ i) {
-        if (!(i % 6)) printf(" %d:", i/6);
-        cout << s[i];
-    } putchar('\n');
-}
-
-inline string utility::bit2fla (const string &src) {
-    int len = src.length(), tmp = src[0] ^ '0';
-    string ret = "";
-    for (int i=1; i^len; ++ i) {
-        if (!(i % 6)) ret += int2char(tmp), tmp = 0;
-        tmp = (tmp << 1) + (src[i] ^ '0');
-    } if (len % 6) {
-        ret += "(";
-        for (int i = 6*(len/6); i^len; ++ i) ret += src[i];
-        ret += ")";
-    } return ret;
-}
-
-inline string utility::fla2bit (const string &src) {
-    int len = src.length(), tmp;
-    string ret = ""; stack<int> s;
-    while (!s.empty()) s.pop();
-    for (int i=0; i^len; ++ i) {
-        if (!(src[i]^'(')) {
-            for (int j=i+1; j<len-1; ++ j) ret += src[j];
-            return ret;
-        } tmp = char2int(src[i]);
-        for (int j=0; j^6; ++ j) s.push(tmp % 2), tmp >>= 1;
-        while (!s.empty()) {ret += (char)(s.top()+'0'); s.pop();}
-    } return ret;
-}
-
 class Huffman {
 private:
 
@@ -107,12 +72,6 @@ public:
     static void printDFS (const node*);
 
 };
-
-void Huffman::distructDFS(const node *rt) {
-    if (rt->lson) distructDFS(rt->lson);
-    if (rt->rson) distructDFS(rt->rson);
-    delete rt;
-}
 
 const string testString[5] = {
         "QwQniconiconi",
@@ -210,4 +169,45 @@ void Huffman::printDFS (const node* rt) {
         rt->lson? rt->lson->name:'-', rt->rson? rt->rson->name:'-');
     if (rt->lson) printDFS (rt->lson);
     if (rt->rson) printDFS (rt->rson);
+}
+
+void Huffman::distructDFS(const node *rt) {
+    if (rt->lson) distructDFS(rt->lson);
+    if (rt->rson) distructDFS(rt->rson);
+    delete rt;
+}
+
+inline void utility::printStrAs6(const string &s) {
+    int len = s.length(); cout << s[0];
+    for (int i=1; i^len; ++ i) {
+        if (!(i % 6)) printf(" %d:", i/6);
+        cout << s[i];
+    } putchar('\n');
+}
+
+inline string utility::bit2fla (const string &src) {
+    int len = src.length(), tmp = src[0] ^ '0';
+    string ret = "";
+    for (int i=1; i^len; ++ i) {
+        if (!(i % 6)) ret += int2char(tmp), tmp = 0;
+        tmp = (tmp << 1) + (src[i] ^ '0');
+    } if (len % 6) {
+        ret += "(";
+        for (int i = 6*(len/6); i^len; ++ i) ret += src[i];
+        ret += ")";
+    } return ret;
+}
+
+inline string utility::fla2bit (const string &src) {
+    int len = src.length(), tmp;
+    string ret = ""; stack<int> s;
+    while (!s.empty()) s.pop();
+    for (int i=0; i^len; ++ i) {
+        if (!(src[i]^'(')) {
+            for (int j=i+1; j<len-1; ++ j) ret += src[j];
+            return ret;
+        } tmp = char2int(src[i]);
+        for (int j=0; j^6; ++ j) s.push(tmp % 2), tmp >>= 1;
+        while (!s.empty()) {ret += (char)(s.top()+'0'); s.pop();}
+    } return ret;
 }
