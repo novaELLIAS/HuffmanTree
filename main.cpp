@@ -16,16 +16,19 @@ private:
     struct node {
         int name, wei;
         node *lson, *rson;
-    } *root;
+    };
+
+    const node *root;
 
     struct cmp {
-        inline bool operator() (const node& a, const node& b) {
-            return a.wei < b.wei;
+        inline bool operator() (const node* a, const node* b) {
+            return a->wei < b->wei;
         }
     };
 
 public:
     inline void build (const string&);
+    static void printDFS (const node *rt);
 } tre;
 
 string testString = "This object has escaped into fantasy. Next Dream...";
@@ -36,32 +39,43 @@ signed main() {
 }
 
 inline void Huffman::build (const string& src) {
-    __gnu_pbds::priority_queue<node, cmp, pairing_heap_tag> que;
+    __gnu_pbds::priority_queue<node*, cmp, pairing_heap_tag> que;
     while (!que.empty()) que.pop();
 
     int strCnt[512];
     memset(strCnt, 0, sizeof strCnt);
 
     register int len = src.length();
-    for (register int i=0; i^len; ++ i) {
-        if (!strCnt[src[i]]) ++ totalLeaf; ++ strCnt[src[i]];
+    for (register int i=0; i^len; ++ i) ++ strCnt[src[i]];
+
+    for (register int i=0; i^512; ++ i) {
+        if (strCnt[i]) {
+            node *tmp = new node{i, strCnt[i], NULL, NULL};
+            que.push(tmp);
+            printf("tmp: %d %d %d %d\n", tmp->name, tmp->wei, tmp->lson, tmp->rson);
+        }
     }
 
-    register int cnt = 0;
-    for (register int i=0; i^512; ++ i) {
-        if (!strCnt[i]) {
-            node *tmp = new node{i, strCnt[i], NULL, NULL};
-            que.push(*tmp);
-        }
-    } cnt = 0;
+    register node *a, *b;
+    while (que.size() > 1) {
+        a = que.top(); que.pop();
+        b = que.top(); que.pop();
 
-    const node *a, *b;
-    while (que.empty() > 1) {
-        a = &que.top(); que.pop();
-        b = &que.top(); que.pop();
+        //printf("a: %c, %d, %c, %c\n", (a->name^(-1))? a->name:'-', a->wei, a->lson? a->lson->name:'-', a->rson? a->rson->name:'-');
+        //printf("b: %c, %d, %c, %c\n", (b->name^(-1))? b->name:'-', b->wei, b->lson? b->lson->name:'-', b->rson? b->rson->name:'-');
 
-        node *fa = new node{0, a->wei+b->wei, const_cast<node *>(a), const_cast<node *>(b)};
-        que.push(*fa);
-    } *root = que.top(); que.pop();
+        node *fa = new node{-1, a->wei + b->wei, a, b};
+        que.push(fa);
+        //printf("f: %d, %d, %c, %c\n", fa->name, fa->wei, fa->lson->name, fa->rson->name);
+    } root = que.top(); que.pop();
 
+    puts("build FIN");
+
+    printDFS(root);
+}
+
+void Huffman::printDFS (const node *rt) {
+    printf("name: %d, wei: %d, son: %d, %d\n", rt->name, rt->wei, rt->lson!=NULL? rt->lson->name:0, rt->rson!=NULL? rt->rson->name:0);
+    if (rt->lson != NULL) printDFS (rt->lson);
+    if (rt->rson != NULL) printDFS (rt->rson);
 }
