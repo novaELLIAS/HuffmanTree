@@ -11,7 +11,8 @@ using namespace __gnu_pbds;
 
 class Huffman {
 private:
-    int totalLeaf = 0;
+
+    gp_hash_table<int, string> eMap;
 
     struct node {
         int name, wei;
@@ -28,14 +29,31 @@ private:
 
 public:
     inline void build (const string&);
-    static void printDFS (const node *rt);
+    static void printDFS (const node*);
+    void generateMap (const node*, string);
+    inline string encrypt (const string&);
+    inline string dectypt (const string&)
 } tre;
 
 string testString = "This object has escaped into fantasy. Next Dream...";
 
 signed main() {
     tre.build(testString);
+
+    cout << tre.encrypt(testString) << endl;
+
     return 0;
+}
+
+inline string Huffman::dectypt(const string &s) {
+
+}
+
+inline string Huffman::encrypt(const string &s) {
+    register string ret = "";
+    register int len = s.length();
+    for (register int i=0; i^len; ++ i) ret += eMap[s[i]];
+    return ret;
 }
 
 inline void Huffman::build (const string& src) {
@@ -72,10 +90,21 @@ inline void Huffman::build (const string& src) {
     puts("build FIN");
 
     printDFS(root);
+    generateMap(root, "");
 }
 
 void Huffman::printDFS (const node *rt) {
     printf("name: %d, wei: %d, son: %d, %d\n", rt->name, rt->wei, rt->lson!=NULL? rt->lson->name:0, rt->rson!=NULL? rt->rson->name:0);
     if (rt->lson != NULL) printDFS (rt->lson);
     if (rt->rson != NULL) printDFS (rt->rson);
+}
+
+void Huffman::generateMap(const node *rt, string s) {
+    if (rt->name ^ -1) {
+        eMap.insert(make_pair(rt->name, s));
+        return;
+    } else {
+        if (rt->lson) generateMap(rt->lson, s+"0");
+        if (rt->rson) generateMap(rt->rson, s+"1");
+    }
 }
