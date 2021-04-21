@@ -22,46 +22,52 @@ class utility {
     }
 
     static inline int char2int (char c) {
-        if (c <= '9') return c ^ '0';
+        if (c <= '9') return c - '0';
+        if (c <= '=') return 62 + c - '<';
         if (c <= 'Z') return 10 + c - 'A';
-        if (c <= 'z') return 36 + c - 'a';
-        return 62 + c - '<';
+        return 36 + c - 'a';
     }
 
 public:
 
     static inline string bit2fla (const string&);
     static inline string fla2bit (const string&);
+    static inline void printStrAs6 (const string&);
 
 };
 
+inline void utility::printStrAs6(const string &s) {
+    int len = s.length(); cout << s[0];
+    for (int i=1; i^len; ++ i) {
+        if (!(i % 6)) printf(" %d:", i/6);
+        cout << s[i];
+    } putchar('\n');
+}
+
 inline string utility::bit2fla (const string &src) {
-    int len = src.length();
-    int tmp = src[0] ^ '0';
+    int len = src.length(), tmp = src[0] ^ '0';
     string ret = "";
     for (int i=1; i^len; ++ i) {
         if (!(i % 6)) ret += int2char(tmp), tmp = 0;
         tmp = (tmp << 1) + (src[i] ^ '0');
     } if (len % 6) {
         ret += "(";
-        for (int i=6 * (len / 6); i^len; ++ i) ret += src[i];
+        for (int i = 6*(len/6); i^len; ++ i) ret += src[i];
         ret += ")";
     } return ret;
 }
 
 inline string utility::fla2bit (const string &src) {
     int len = src.length(), tmp;
-    string ret = "";
-    stack<int> s;
+    string ret = ""; stack<int> s;
     while (!s.empty()) s.pop();
     for (int i=0; i^len; ++ i) {
         if (!(src[i]^'(')) {
             for (int j=i+1; j<len-1; ++ j) ret += src[j];
             return ret;
         } tmp = char2int(src[i]);
-        for (int j=0; j^6; ++ j) {
-            s.push(tmp % 2); tmp >>= 1;
-        } while (!s.empty()) {ret += (char)(s.top()+'0'); s.pop();}
+        for (int j=0; j^6; ++ j) s.push(tmp % 2), tmp >>= 1;
+        while (!s.empty()) {ret += (char)(s.top()+'0'); s.pop();}
     } return ret;
 }
 
@@ -87,30 +93,49 @@ private:
 
 public:
 
+
+
     inline void build (const string&);
     void generateMap (const node*, string);
     inline string encrypt (const string&);
     inline string decrypt (const string&);
     inline void decryptDFS (const node*, const string&, int);
+    static void distructDFS(const node*);
+
+    ~Huffman() {distructDFS (root);}
 
     static void printDFS (const node*);
 
-} tre;
+};
 
-const string testString = "I love data Structure, I love Computer 。 I will try my best to study data Structure.";
-//const string testString = "This object has escaped into fantasy. Next Dream...";
-//const string testString = "nico nico nii! anata no haato ni nico nico nii! egao no todokeru yazawa nico nico! Nico Nii oboete Rabu nico!";
+void Huffman::distructDFS(const node *rt) {
+    if (rt->lson) distructDFS(rt->lson);
+    if (rt->rson) distructDFS(rt->rson);
+    delete rt;
+}
+
+const string testString[5] = {
+        "QwQniconiconi",
+        "I love data Structure. I love Computer. I will try my best to study data Structure.",
+        "This object has escaped into fantasy. Next Dream...",
+        "nananananananananananananananananananananananananananananananananananana~",
+        "nico nico nii! anata no haato ni nico nico nii! egao no todokeru yazawa nico nico! Nico Nii oboete Rabu nico!"
+};
 
 signed main() {
-    tre.build(testString);
-    string enc = tre.encrypt(testString);
-    string dec = tre.decrypt(enc);
-    cout << enc << endl << dec << endl;
-    return 0;
+    for (int i=0; i^5; ++ i) {
+        Huffman tre;
+        tre.build(testString[i]);
+        string enc = tre.encrypt(testString[i]);
+        string dec = tre.decrypt(enc);
+        cout << enc << endl << dec << endl;
+    } return 0;
 }
 
 inline string Huffman::decrypt(const string &s) {
-    string src = util.fla2bit(s); ret = "", maxPos = 0;
+    //string src = s;
+    string src = util.fla2bit(s);
+    ret = "", maxPos = 0;
     int len = src.length();
     while (maxPos < len) decryptDFS(root, src, maxPos);
     return ret;
@@ -161,12 +186,13 @@ inline void Huffman::build (const string& src) {
             printf("QuefuncB: %c, %d, wei: %d\n", b->name, b->name, b->wei);
             printf("QuefuncF: %c, %d, wei: %d\n", fa->name, fa->name, fa->wei);
         #endif
+
         que.push(fa);
     } root = que.top(); que.pop();
 
     generateMap(root, "");
 
-    printDFS (root);
+    //printDFS (root);
 }
 
 void Huffman::generateMap(const node *rt, string s) {
