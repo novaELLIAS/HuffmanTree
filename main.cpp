@@ -12,14 +12,10 @@ using namespace __gnu_pbds;
 class Huffman {
 private:
 
-    gp_hash_table<int, string> eMap;
-
     struct node {
         int name, wei;
         node *lson, *rson;
     };
-
-    const node *root;
 
     struct cmp {
         inline bool operator() (const node* a, const node* b) {
@@ -27,12 +23,20 @@ private:
         }
     };
 
+    gp_hash_table<int, string> eMap;
+    string ret;
+    int maxPos;
+    const node *root;
+
 public:
+
     inline void build (const string&);
     static void printDFS (const node*);
     void generateMap (const node*, string);
     inline string encrypt (const string&);
-    inline string dectypt (const string&)
+    inline string decrypt (const string&);
+    inline void decryptDFS (const node*, const string&, int);
+
 } tre;
 
 string testString = "This object has escaped into fantasy. Next Dream...";
@@ -40,16 +44,28 @@ string testString = "This object has escaped into fantasy. Next Dream...";
 signed main() {
     tre.build(testString);
 
-    cout << tre.encrypt(testString) << endl;
+    string enc =  tre.encrypt(testString);
+
+    string dec = tre.decrypt(enc);
+
+    cout << enc << endl << dec << endl;
 
     return 0;
 }
 
-inline string Huffman::dectypt(const string &s) {
-
+inline string Huffman::decrypt(const string &s) {
+    ret = "", maxPos = 0; register int len = s.length();
+    while (maxPos < len) decryptDFS(root, s, maxPos);
+    return ret;
 }
 
-inline string Huffman::encrypt(const string &s) {
+inline void Huffman::decryptDFS (const node *rt, const string& s, int pos) {
+    if (rt->name ^ -1) {
+        ret += (char)rt->name, maxPos = pos; return;
+    } else decryptDFS((s[pos]^'1')? rt->lson:rt->rson, s, pos + 1);
+}
+
+inline string Huffman::encrypt (const string &s) {
     register string ret = "";
     register int len = s.length();
     for (register int i=0; i^len; ++ i) ret += eMap[s[i]];
@@ -79,12 +95,8 @@ inline void Huffman::build (const string& src) {
         a = que.top(); que.pop();
         b = que.top(); que.pop();
 
-        //printf("a: %c, %d, %c, %c\n", (a->name^(-1))? a->name:'-', a->wei, a->lson? a->lson->name:'-', a->rson? a->rson->name:'-');
-        //printf("b: %c, %d, %c, %c\n", (b->name^(-1))? b->name:'-', b->wei, b->lson? b->lson->name:'-', b->rson? b->rson->name:'-');
-
         node *fa = new node{-1, a->wei + b->wei, a, b};
         que.push(fa);
-        //printf("f: %d, %d, %c, %c\n", fa->name, fa->wei, fa->lson->name, fa->rson->name);
     } root = que.top(); que.pop();
 
     puts("build FIN");
