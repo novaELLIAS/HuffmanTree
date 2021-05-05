@@ -11,105 +11,170 @@ using namespace __gnu_pbds;
 
 //#define COUNTER_DEBUG
 //#define TREE_BUILDING_DEBUG
+//#define PRINT_TREE
 
 class utility {
-
+private:
     static inline char int2char (int c) {
         if (c < 10) return (char)(c + '0');
         if (c < 36) return (char)(c - 10 + 'A');
         if (c < 62) return (char)(c - 36 + 'a');
         return (char)(c - 62 + '<');
     }
-
     static inline int char2int (char c) {
         if (c <= '9') return c - '0';
         if (c <= '=') return 62 + c - '<';
         if (c <= 'Z') return 10 + c - 'A';
         return 36 + c - 'a';
     }
-
 public:
-
     static inline string bit2fla (const string&);
     static inline string fla2bit (const string&);
     static inline void printStrAs6 (const string&);
-
 };
 
 class Huffman {
 private:
-
     struct node {
         int name, wei;
         node *lson, *rson;
     };
-
     struct cmp {
         inline bool operator() (const node* a, const node* b) {
             return a->wei > b->wei;
         }
     };
 
+    ofstream treeDoc;
     gp_hash_table<int, string> eMap;
-    string ret;
-    int maxPos{};
+//    string ret;
+//    int maxPos{};
     const node *root{};
     utility util;
 
+    void ex_preorder (const node*);
+
 public:
-
-
-
     inline void build (const string&);
     void generateMap (const node*, string);
+    inline void saveTree (const node*);
     inline string encrypt (const string&);
-    inline string decrypt (const string&);
-    inline void decryptDFS (const node*, const string&, int);
+    //inline string decrypt (const string&);
+    //inline void decryptDFS (const node*, const string&, int);
     static void distructDFS(const node*);
-
     ~Huffman() {distructDFS (root);}
-
     static void printDFS (const node*);
-
 };
 
-const string testString[5] = {
-        "QwQniconiconi",
-        "I love data Structure. I love Computer. I will try my best to study data Structure.",
-        "This object has escaped into fantasy. Next Dream...",
-        "nananananananananananananananananananananananananananananananananananana~",
-        "nico nico nii! anata no haato ni nico nico nii! egao no todokeru yazawa nico nico! Nico Nii oboete Rabu nico!"
+class HuffmanDecryptor {
+private:
+    struct node {
+        int name;
+        node *lson, *rson;
+    } *root;
+    string ret = "";
+    int maxPos = 0, pos = 0;
+
+    void buildDFS (node*&, const string&);
+    void decryptDFS (const node*, const string&, int);
+    static void distructDFS (const node*);
+
+public:
+    inline void build (const string&);
+    inline string decrypt (const string&);
+    void printDFS(const node*);
+    ~HuffmanDecryptor() {distructDFS (root);}
 };
 
-signed main() {
-    for (int i=0; i^5; ++ i) {
-        Huffman tre;
-        tre.build(testString[i]);
-        string enc = tre.encrypt(testString[i]);
-        string dec = tre.decrypt(enc);
-        cout << enc << endl << dec << endl;
-    } return 0;
+inline void localTest();
+
+signed main () {
+    //localTest ();
+    ifstream inFile("../src/in.txt", ios::in);
+    ostringstream temp;
+    temp << inFile.rdbuf();
+    string content = temp.str();
+
+    Huffman tre; tre.build(content);
+    string enc = tre.encrypt(content);
+    ofstream outFile("../src/out_base6.bit", ios::out | ios::binary);
+    utility util; outFile << util.bit2fla(enc); outFile.close();
+    HuffmanDecryptor decryptor;
+    decryptor.build("tree.bit");
+    decryptor.decrypt("enc.bit");
 }
 
-inline string Huffman::decrypt(const string &s) {
-    //string src = s;
-    string src = util.fla2bit(s);
-    ret = "", maxPos = 0;
-    int len = src.length();
-    while (maxPos < len) decryptDFS(root, src, maxPos);
+
+void HuffmanDecryptor::distructDFS(const node *rt) {
+    if (rt->lson) distructDFS(rt->lson);
+    if (rt->rson) distructDFS(rt->rson);
+    delete rt;
+}
+
+inline string HuffmanDecryptor::decrypt(const string &fileDic) {
+    ifstream inFile("../src/" + fileDic, ios::in | ios::binary);
+    ostringstream temp; temp << inFile.rdbuf();
+    const string str = temp.str();
+    ret = "", maxPos = 0; register int len = str.length();
+    while (maxPos < len) decryptDFS(root, str, maxPos);
+    ofstream outFile("../src/out.txt", ios::out);
+    outFile << ret; outFile.close();
     return ret;
 }
 
-inline void Huffman::decryptDFS (const node *rt, const string& s, int pos) {
+void HuffmanDecryptor::decryptDFS(const node *rt, const string &s, int pos) {
     if (rt->name ^ -1) {
         ret += (char)rt->name, maxPos = pos; return;
     } else decryptDFS((s[pos]^'1')? rt->lson:rt->rson, s, pos + 1);
 }
 
+void HuffmanDecryptor::buildDFS(node*& rt, const string &s) {
+    register char c = s[pos ++];
+    if (c ^ (char)(-2)) {
+        rt = new node{c, NULL, NULL};
+        buildDFS(rt->lson, s); buildDFS(rt->rson, s);
+    } else rt = NULL;
+}
+
+inline void HuffmanDecryptor::build(const string& fileDic) {
+    ifstream inFile("../src/" + fileDic, ios::in | ios::binary);
+    ostringstream temp;
+    temp << inFile.rdbuf();
+    const string preorder = temp.str();
+    buildDFS(root, preorder);
+#ifdef PRINT_TREE
+    printDFS(root);
+#endif
+}
+
+void HuffmanDecryptor::printDFS (const node* rt) {
+    printf("print: name: %d, %c; %c, %c\n", rt->name, rt->name,\
+        rt->lson? rt->lson->name:'-', rt->rson? rt->rson->name:'-');
+    if (rt->lson) printDFS (rt->lson);
+    if (rt->rson) printDFS (rt->rson);
+}
+
+inline void Huffman::saveTree(const node *rt) {
+    treeDoc.open("../src/tree.bit", ios::out | ios::binary);
+    ex_preorder(rt);
+    treeDoc.close();
+}
+
+void Huffman::ex_preorder(const node *rt) {
+    if(rt == NULL) {treeDoc << (char)(-2); return;}
+    treeDoc << (char)rt->name;
+    ex_preorder(rt->lson);
+    ex_preorder(rt->rson);
+}
+
+
+
 inline string Huffman::encrypt (const string &src) {
     string ret = "";
     int len = src.length();
     for (int i=0; i^len; ++ i) ret += eMap[src[i]];
+    ofstream outFile("../src/enc.bit", ios::out | ios::binary);
+    outFile << ret; outFile.close();
     return util.bit2fla(ret);
 }
 
@@ -127,9 +192,9 @@ inline void Huffman::build (const string& src) {
         if (strCnt[i]) {
             node *tmp = new node{i, strCnt[i], NULL, NULL};
 
-            #ifdef COUNTER_DEBUG
-                printf("this: %c, %d\n", i, strCnt[i]);
-            #endif
+#ifdef COUNTER_DEBUG
+            printf("this: %c, %d\n", i, strCnt[i]);
+#endif
 
             que.push(tmp);
         }
@@ -140,18 +205,21 @@ inline void Huffman::build (const string& src) {
         a = que.top(); que.pop(); b = que.top(); que.pop();
         node *fa = new node{-1, a->wei + b->wei, a, b};
 
-        #ifdef TREE_BUILDING_DEBUG
-            printf("QuefuncA: %c, %d, wei: %d\n", a->name, a->name, a->wei);
+#ifdef TREE_BUILDING_DEBUG
+        printf("QuefuncA: %c, %d, wei: %d\n", a->name, a->name, a->wei);
             printf("QuefuncB: %c, %d, wei: %d\n", b->name, b->name, b->wei);
             printf("QuefuncF: %c, %d, wei: %d\n", fa->name, fa->name, fa->wei);
-        #endif
+#endif
 
         que.push(fa);
     } root = que.top(); que.pop();
 
     generateMap(root, "");
 
-    //printDFS (root);
+#ifdef PRINT_TREE
+    printDFS(root);
+#endif
+    saveTree(root);
 }
 
 void Huffman::generateMap(const node *rt, string s) {
@@ -210,4 +278,23 @@ inline string utility::fla2bit (const string &src) {
         for (int j=0; j^6; ++ j) s.push(tmp % 2), tmp >>= 1;
         while (!s.empty()) {ret += (char)(s.top()+'0'); s.pop();}
     } return ret;
+}
+
+void localTest () {
+    const string testString[5] = {
+            "QwQniconiconi",
+            "I love data Structure. I love Computer. I will try my best to study data Structure.",
+            "This object has escaped into fantasy.\nNext Dream...",
+            "nananananananananananananananananananananananananananananananananananana~",
+            "nico nico nii! anata no haato ni nico nico nii! egao no todokeru yazawa nico nico! Nico Nii oboete Rabu nico!"
+    }; for (int i=0; i^5; ++ i) {
+        cout << "lev " << i << endl;
+        Huffman tre;
+        tre.build(testString[i]);
+        string enc = tre.encrypt(testString[i]);
+        HuffmanDecryptor decryptor;
+        decryptor.build("tree.bit");
+        string dec = decryptor.decrypt("enc.bit");
+        cout << testString[i] << endl << dec << endl;
+    }
 }
