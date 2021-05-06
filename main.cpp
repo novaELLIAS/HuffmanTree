@@ -12,6 +12,8 @@ using namespace __gnu_pbds;
 //#define COUNTER_DEBUG
 //#define TREE_BUILDING_DEBUG
 //#define PRINT_TREE
+//#define LOGIC_PROCESS_DEBUG
+//#define IO_PROCESS_DEBUG
 
 class utility {
 private:
@@ -27,11 +29,79 @@ private:
         if (c <= 'Z') return 10 + c - 'A';
         return 36 + c - 'a';
     }
+    static inline string dec8bit (unsigned char c);
+    inline string strFill8bit (string);
+
 public:
     static inline string bit2fla (const string&);
     static inline string fla2bit (const string&);
-    static inline void printStrAs6 (const string&);
-};
+    static inline void printStrAs6(const string&);
+    static inline void printStrAs8(const string &);
+    inline int getRealLen (const string&);
+    inline void bitWriter (const string&, const string&);
+    inline string bitReader (const string&);
+} util;
+
+inline string utility::dec8bit(unsigned char c) {
+    register string ret = ""; register int cnt = 8;
+    register stack<int> s; while (!s.empty()) s.pop();
+    while (cnt --) {s.push(c&1); c >>= 1;}
+    while (!s.empty()) {ret += char(s.top() + '0'); s.pop();}
+    return ret;
+}
+
+inline string utility::bitReader(const string &FileName) {
+    ifstream inFile("../src/" + FileName, ios::in | ios::binary);
+    ostringstream temp;
+    temp << inFile.rdbuf();
+    string s = temp.str();
+//    ifstream inFile("../src/" + FileName, ios::in | ios::binary);
+//    register string file = "../src/" + FileName;
+//    freopen (file.c_str(), "rb", stdin);
+    register string ret = "";
+    register int len = s.length();
+    for (int i=0; i^len; ++ i) ret += dec8bit(s[i]);
+    inFile.close(); return ret;
+}
+
+inline void utility::bitWriter(const string &src, const string &FileName) {
+    ofstream ouFile("../src/" + FileName, ios::out | ios::binary);
+    register string s = strFill8bit(src);
+#ifdef IO_PROSESS_DEBUG
+    //cout << "src: " << src << " " << src.length() << endl;
+    //cout << "s:   " << s << " " << s.length() << endl;
+    cout << "src: "; util.printStrAs8(src); cout << " " << src.length() << endl;
+    cout << "s  : "; util.printStrAs8(  s); cout << " " <<   s.length() << endl;
+#endif
+    register int len = s.length();
+    register unsigned char tmp = s[0] ^ '0';
+    for (int i=1; i^len; ++ i) {
+        if (!(i % 8)) ouFile << tmp, tmp = 0;
+        tmp = (tmp << 1) + (s[i] ^ '0');
+    } if (tmp) ouFile << tmp; ouFile.close(); return;
+}
+
+inline int utility::getRealLen(const string &s) {
+#ifdef IO_PROCESS_DEBUG
+    cout << "ret: "; util.printStrAs8(s); cout << " " << s.length() << endl;
+#endif
+    register int len = s.length() - 1;
+    while (s[len --] ^ '1');
+#ifdef IO_PROCESS_DEBUG
+    cout << "len: " << len + 1 << endl;
+#endif
+    return len + 1;
+}
+
+inline string utility::strFill8bit(string s) {
+    register string ret = s;
+    register int len = ret.length() % 8;
+    if (len) {
+        ret += "1"; ++ len;
+        while (len % 8) ret += "0", ++ len;
+    } else ret += "10000000";
+    return ret;
+}
 
 class Huffman {
 private:
@@ -86,10 +156,36 @@ public:
     ~HuffmanDecryptor() {distructDFS (root);}
 };
 
-inline void localTest();
+void localTest () {
+    const string testString[5] = {
+            "QwQniconiconi",
+            "I love data Structure. I love Computer. I will try my best to study data Structure.",
+            "This object has escaped into fantasy.\nNext Dream...",
+            "nananananananananananananananananananananananananananananananananananana~",
+            "nico nico nii! anata no haato ni nico nico nii! egao no todokeru yazawa nico nico! Nico Nii oboete Rabu nico!"
+    }; for (int i=0; i^5; ++ i) {
+        cout << "lev " << i << endl;
+        Huffman tre;
+        tre.build(testString[i]);
+#ifdef LOGIC_PROCESS_DEBUG
+        cout << "tre build fin." << endl;
+#endif
+        string enc = tre.encrypt(testString[i]);
+#ifdef LOGIC_PROCESS_DEBUG
+        cout << "tre enc fin." << endl;
+#endif
+        HuffmanDecryptor decryptor;
+        decryptor.build("tree.bin");
+#ifdef LOGIC_PROCESS_DEBUG
+        cout << "decryptor build fin." << endl;
+#endif
+        string dec = decryptor.decrypt("enc.bin");
+        cout << testString[i] << endl << dec << endl;
+    }
+}
 
 signed main () {
-    //localTest ();
+    localTest ();
     ifstream inFile("../src/in.txt", ios::in);
     ostringstream temp;
     temp << inFile.rdbuf();
@@ -97,11 +193,13 @@ signed main () {
 
     Huffman tre; tre.build(content);
     string enc = tre.encrypt(content);
-    ofstream outFile("../src/out_base6.bit", ios::out | ios::binary);
-    utility util; outFile << util.bit2fla(enc); outFile.close();
+
+    ofstream outFile("../src/out_base6.bin", ios::out | ios::binary);
+    outFile << util.bit2fla(enc); outFile.close();
+
     HuffmanDecryptor decryptor;
-    decryptor.build("tree.bit");
-    decryptor.decrypt("enc.bit");
+    decryptor.build("tree.bin");
+    decryptor.decrypt("enc.bin");
 }
 
 
@@ -112,10 +210,11 @@ void HuffmanDecryptor::distructDFS(const node *rt) {
 }
 
 inline string HuffmanDecryptor::decrypt(const string &fileDic) {
-    ifstream inFile("../src/" + fileDic, ios::in | ios::binary);
-    ostringstream temp; temp << inFile.rdbuf();
-    const string str = temp.str();
-    ret = "", maxPos = 0; register int len = str.length();
+//    ifstream inFile("../src/" + fileDic, ios::in | ios::binary);
+//    ostringstream temp; temp << inFile.rdbuf();
+//    const string str = temp.str();
+     const string str = util.bitReader(fileDic);
+    ret = "", maxPos = 0; register int len = util.getRealLen(str);//str.length();
     while (maxPos < len) decryptDFS(root, str, maxPos);
     ofstream outFile("../src/out.txt", ios::out);
     outFile << ret; outFile.close();
@@ -139,7 +238,7 @@ void HuffmanDecryptor::buildDFS(node*& rt, const string &s) {
 inline void HuffmanDecryptor::build(const string& fileDic) {
     ifstream inFile("../src/" + fileDic, ios::in | ios::binary);
     ostringstream temp;
-    temp << inFile.rdbuf();
+    temp << inFile.rdbuf(); inFile.close();
     const string preorder = temp.str();
     buildDFS(root, preorder);
 #ifdef PRINT_TREE
@@ -155,7 +254,7 @@ void HuffmanDecryptor::printDFS (const node* rt) {
 }
 
 inline void Huffman::saveTree(const node *rt) {
-    treeDoc.open("../src/tree.bit", ios::out | ios::binary);
+    treeDoc.open("../src/tree.bin", ios::out | ios::binary);
     ex_preorder(rt);
     treeDoc.close();
 }
@@ -167,14 +266,13 @@ void Huffman::ex_preorder(const node *rt) {
     ex_preorder(rt->rson);
 }
 
-
-
 inline string Huffman::encrypt (const string &src) {
     string ret = "";
     int len = src.length();
     for (int i=0; i^len; ++ i) ret += eMap[src[i]];
-    ofstream outFile("../src/enc.bit", ios::out | ios::binary);
-    outFile << ret; outFile.close();
+//    ofstream outFile("../src/enc.bin", ios::out | ios::binary);
+//    outFile << ret; outFile.close();
+    util.bitWriter(ret, "enc.bin");
     return util.bit2fla(ret);
 }
 
@@ -253,6 +351,17 @@ inline void utility::printStrAs6(const string &s) {
     } putchar('\n');
 }
 
+inline void utility::printStrAs8(const string &s) {
+    int len = s.length(); cout << s[0];
+    for (int i=1; i^len; ++ i) {
+        if (!(i % 8)) {
+            if (!(i%64)) putchar('\n');
+            printf(" %d:", i/8);
+        }
+        cout << s[i];
+    } putchar('\n');
+}
+
 inline string utility::bit2fla (const string &src) {
     int len = src.length(), tmp = src[0] ^ '0';
     string ret = "";
@@ -278,23 +387,4 @@ inline string utility::fla2bit (const string &src) {
         for (int j=0; j^6; ++ j) s.push(tmp % 2), tmp >>= 1;
         while (!s.empty()) {ret += (char)(s.top()+'0'); s.pop();}
     } return ret;
-}
-
-void localTest () {
-    const string testString[5] = {
-            "QwQniconiconi",
-            "I love data Structure. I love Computer. I will try my best to study data Structure.",
-            "This object has escaped into fantasy.\nNext Dream...",
-            "nananananananananananananananananananananananananananananananananananana~",
-            "nico nico nii! anata no haato ni nico nico nii! egao no todokeru yazawa nico nico! Nico Nii oboete Rabu nico!"
-    }; for (int i=0; i^5; ++ i) {
-        cout << "lev " << i << endl;
-        Huffman tre;
-        tre.build(testString[i]);
-        string enc = tre.encrypt(testString[i]);
-        HuffmanDecryptor decryptor;
-        decryptor.build("tree.bit");
-        string dec = decryptor.decrypt("enc.bit");
-        cout << testString[i] << endl << dec << endl;
-    }
 }
