@@ -42,67 +42,6 @@ public:
     inline string bitReader (const string&);
 } util;
 
-inline string utility::dec8bit(unsigned char c) {
-    register string ret = ""; register int cnt = 8;
-    register stack<int> s; while (!s.empty()) s.pop();
-    while (cnt --) {s.push(c&1); c >>= 1;}
-    while (!s.empty()) {ret += char(s.top() + '0'); s.pop();}
-    return ret;
-}
-
-inline string utility::bitReader(const string &FileName) {
-    ifstream inFile("../src/" + FileName, ios::in | ios::binary);
-    ostringstream temp;
-    temp << inFile.rdbuf();
-    string s = temp.str();
-//    ifstream inFile("../src/" + FileName, ios::in | ios::binary);
-//    register string file = "../src/" + FileName;
-//    freopen (file.c_str(), "rb", stdin);
-    register string ret = "";
-    register int len = s.length();
-    for (int i=0; i^len; ++ i) ret += dec8bit(s[i]);
-    inFile.close(); return ret;
-}
-
-inline void utility::bitWriter(const string &src, const string &FileName) {
-    ofstream ouFile("../src/" + FileName, ios::out | ios::binary);
-    register string s = strFill8bit(src);
-#ifdef IO_PROSESS_DEBUG
-    //cout << "src: " << src << " " << src.length() << endl;
-    //cout << "s:   " << s << " " << s.length() << endl;
-    cout << "src: "; util.printStrAs8(src); cout << " " << src.length() << endl;
-    cout << "s  : "; util.printStrAs8(  s); cout << " " <<   s.length() << endl;
-#endif
-    register int len = s.length();
-    register unsigned char tmp = s[0] ^ '0';
-    for (int i=1; i^len; ++ i) {
-        if (!(i % 8)) ouFile << tmp, tmp = 0;
-        tmp = (tmp << 1) + (s[i] ^ '0');
-    } if (tmp) ouFile << tmp; ouFile.close(); return;
-}
-
-inline int utility::getRealLen(const string &s) {
-#ifdef IO_PROCESS_DEBUG
-    cout << "ret: "; util.printStrAs8(s); cout << " " << s.length() << endl;
-#endif
-    register int len = s.length() - 1;
-    while (s[len --] ^ '1');
-#ifdef IO_PROCESS_DEBUG
-    cout << "len: " << len + 1 << endl;
-#endif
-    return len + 1;
-}
-
-inline string utility::strFill8bit(string s) {
-    register string ret = s;
-    register int len = ret.length() % 8;
-    if (len) {
-        ret += "1"; ++ len;
-        while (len % 8) ret += "0", ++ len;
-    } else ret += "10000000";
-    return ret;
-}
-
 class Huffman {
 private:
     struct node {
@@ -387,4 +326,65 @@ inline string utility::fla2bit (const string &src) {
         for (int j=0; j^6; ++ j) s.push(tmp % 2), tmp >>= 1;
         while (!s.empty()) {ret += (char)(s.top()+'0'); s.pop();}
     } return ret;
+}
+
+inline string utility::dec8bit(unsigned char c) {
+    register string ret = ""; register int cnt = 8;
+    register stack<int> s; while (!s.empty()) s.pop();
+    while (cnt --) {s.push(c&1); c >>= 1;}
+    while (!s.empty()) {ret += char(s.top() + '0'); s.pop();}
+    return ret;
+}
+
+inline string utility::bitReader(const string &FileName) {
+    ifstream inFile("../src/" + FileName, ios::in | ios::binary);
+    ostringstream temp;
+    temp << inFile.rdbuf();
+    string s = temp.str();
+//    ifstream inFile("../src/" + FileName, ios::in | ios::binary);
+//    register string file = "../src/" + FileName;
+//    freopen (file.c_str(), "rb", stdin);
+    register string ret = "";
+    register int len = s.length();
+    for (int i=0; i^len; ++ i) ret += dec8bit(s[i]);
+    inFile.close(); return ret;
+}
+
+inline void utility::bitWriter(const string &src, const string &FileName) {
+    ofstream ouFile("../src/" + FileName, ios::out | ios::binary);
+    register string s = strFill8bit(src);
+#ifdef IO_PROSESS_DEBUG
+    //cout << "src: " << src << " " << src.length() << endl;
+    //cout << "s:   " << s << " " << s.length() << endl;
+    cout << "src: "; util.printStrAs8(src); cout << " " << src.length() << endl;
+    cout << "s  : "; util.printStrAs8(  s); cout << " " <<   s.length() << endl;
+#endif
+    register int len = s.length();
+    register unsigned char tmp = s[0] ^ '0';
+    for (int i=1; i^len; ++ i) {
+        if (!(i % 8)) ouFile << tmp, tmp = 0;
+        tmp = (tmp << 1) + (s[i] ^ '0');
+    } if (tmp) ouFile << tmp; ouFile.close(); return;
+}
+
+inline int utility::getRealLen(const string &s) {
+#ifdef IO_PROCESS_DEBUG
+    cout << "ret: "; util.printStrAs8(s); cout << " " << s.length() << endl;
+#endif
+    register int len = s.length() - 1;
+    while (s[len --] ^ '1');
+#ifdef IO_PROCESS_DEBUG
+    cout << "len: " << len + 1 << endl;
+#endif
+    return len + 1;
+}
+
+inline string utility::strFill8bit(string s) {
+    register string ret = s;
+    register int len = ret.length() % 8;
+    if (len) {
+        ret += "1"; ++ len;
+        while (len % 8) ret += "0", ++ len;
+    } else ret += "10000000";
+    return ret;
 }
