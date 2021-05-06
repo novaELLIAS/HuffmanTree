@@ -231,11 +231,9 @@ inline void Huffman::build (const string& src) {
     for (int i=0; i^128; ++ i) {
         if (strCnt[i]) {
             node *tmp = new node{i, strCnt[i], NULL, NULL};
-
 #ifdef COUNTER_DEBUG
             printf("this: %c, %d\n", i, strCnt[i]);
 #endif
-
             que.push(tmp);
         }
     }
