@@ -242,18 +242,15 @@ inline void Huffman::build (const string& src) {
     while (que.size() > 1) {
         a = que.top(); que.pop(); b = que.top(); que.pop();
         node *fa = new node{-1, a->wei + b->wei, a, b};
-
 #ifdef TREE_BUILDING_DEBUG
         printf("QuefuncA: %c, %d, wei: %d\n", a->name, a->name, a->wei);
             printf("QuefuncB: %c, %d, wei: %d\n", b->name, b->name, b->wei);
             printf("QuefuncF: %c, %d, wei: %d\n", fa->name, fa->name, fa->wei);
 #endif
-
         que.push(fa);
     } root = que.top(); que.pop();
 
     generateMap(root, "");
-
 #ifdef PRINT_TREE
     printDFS(root);
 #endif
