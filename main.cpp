@@ -125,6 +125,7 @@ void localTest () {
 
 signed main () {
     localTest ();
+
     ifstream inFile("../src/in.txt", ios::in);
     ostringstream temp;
     temp << inFile.rdbuf();
@@ -134,6 +135,8 @@ signed main () {
     string enc = tre.encrypt(content);
 
     ofstream outFile("../src/out_base6.bin", ios::out | ios::binary);
+    outFile << util.bit2fla(enc); outFile.close();
+    outFile.open("../src/out_base6.bit", ios::out);
     outFile << util.bit2fla(enc); outFile.close();
 
     HuffmanDecryptor decryptor;
@@ -212,7 +215,7 @@ inline string Huffman::encrypt (const string &src) {
 //    ofstream outFile("../src/enc.bin", ios::out | ios::binary);
 //    outFile << ret; outFile.close();
     util.bitWriter(ret, "enc.bin");
-    return util.bit2fla(ret);
+    return ret;
 }
 
 inline void Huffman::build (const string& src) {
@@ -356,15 +359,16 @@ inline void utility::bitWriter(const string &src, const string &FileName) {
 #ifdef IO_PROSESS_DEBUG
     //cout << "src: " << src << " " << src.length() << endl;
     //cout << "s:   " << s << " " << s.length() << endl;
-    cout << "src: "; util.printStrAs8(src); cout << " " << src.length() << endl;
-    cout << "s  : "; util.printStrAs8(  s); cout << " " <<   s.length() << endl;
+    cout << "src: "; printStrAs8(src); cout << " " << src.length() << endl;
+    cout << "s  : "; printStrAs8(  s); cout << " " <<   s.length() << endl;
 #endif
     register int len = s.length();
     register unsigned char tmp = s[0] ^ '0';
     for (int i=1; i^len; ++ i) {
-        if (!(i % 8)) ouFile << tmp, tmp = 0;
-        tmp = (tmp << 1) + (s[i] ^ '0');
-    } if (tmp) ouFile << tmp; ouFile.close(); return;
+        //if (!(i % 8)) ouFile << tmp, tmp = 0;
+        if (!(i % 8)) ouFile.write(reinterpret_cast<const char *>(&tmp), sizeof tmp), tmp = 0;
+        tmp = (tmp << 1) | (s[i] ^ '0');
+    } if (tmp) ouFile.write(reinterpret_cast<const char *>(&tmp), sizeof tmp); ouFile.close(); return;
 }
 
 inline int utility::getRealLen(const string &s) {
