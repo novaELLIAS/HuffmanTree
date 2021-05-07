@@ -136,8 +136,6 @@ signed main () {
 
     ofstream outFile("../src/out_base6.bin", ios::out | ios::binary);
     outFile << util.bit2fla(enc); outFile.close();
-    outFile.open("../src/out_base6.bit", ios::out);
-    outFile << util.bit2fla(enc); outFile.close();
 
     HuffmanDecryptor decryptor;
     decryptor.build("tree.bin");
@@ -361,9 +359,9 @@ inline void utility::bitWriter(const string &src, const string &FileName) {
     register unsigned char tmp = s[0] ^ '0';
     for (int i=1; i^len; ++ i) {
         //if (!(i % 8)) ouFile << tmp, tmp = 0;
-        if (!(i % 8)) ouFile.write(reinterpret_cast<const char *>(&tmp), sizeof tmp), tmp = 0;
+        if (!(i % 8)) ouFile << tmp, tmp = 0;
         tmp = (tmp << 1) | (s[i] ^ '0');
-    } if (tmp) ouFile.write(reinterpret_cast<const char *>(&tmp), sizeof tmp); ouFile.close(); return;
+    } if (tmp) ouFile << tmp; ouFile.close();
 }
 
 inline int utility::getRealLen(const string &s) {
